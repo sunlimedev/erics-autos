@@ -1,5 +1,5 @@
 [Unit]
-Description=Run gunicorn to serve flask app
+Description=Gunicorn WSGI Runner
 After=network.target
 
 [Service]
