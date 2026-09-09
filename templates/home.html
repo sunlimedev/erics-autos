@@ -16,27 +16,24 @@
 </head>
 <body class="min-h-dvh">
     <!-- full page -->
-    <div class="flex flex-col bg-blue-900">
+    <div class="flex flex-col space-y-2 p-2">
         <!-- header -->
-        <div class="sticky top-0 border-b-2 border-gray-300">
+        <div>
             <!-- header text -->
-            <div class="p-4 font-bold text-gray-300 text-3xl">
+            <div class="flex justify-center w-full font-semibold text-3xl">
                 Eric's Garage
             </div>
         </div>
-        <!-- button container -->
-        <div class="flex flex-col flex-1 p-3 space-y-3">
-            <!-- buttons -->
-            <a href="/hyundai" class="w-100 h-50 rounded-lg">
-                <img src="{{ url_for('static', filename='hyundai_pretty.png') }}" alt="Hyundai Button" class="w-100 h-50 rounded-lg object-cover object-center">
-            </a>
-            <a href="/honda" class="w-100 h-50 rounded-lg">
-                <img src="{{ url_for('static', filename='honda_pretty.png') }}" alt="Honda Button" class="w-100 h-50 rounded-lg object-cover object-center">
-            </a>
-            <a href="/porsche" class="w-100 h-50 rounded-lg">
-                <img src="{{ url_for('static', filename='porsche_pretty.png') }}" alt="Porsche Button" class="w-100 h-50 rounded-lg object-cover object-center">
-            </a>
-        </div>
+        <!-- buttons -->
+        <a href="/hyundai" class="w-full border border-black aspect-2/1 rounded-lg overflow-hidden">
+            <img src="{{ url_for('static', filename='hyundai_pretty.png') }}" alt="Hyundai Button" class="w-full h-full object-cover object-center scale-101">
+        </a>
+        <a href="/honda" class="w-full border border-black aspect-2/1 rounded-lg overflow-hidden">
+            <img src="{{ url_for('static', filename='honda_pretty.png') }}" alt="Honda Button" class="w-full h-full object-cover object-center scale-101">
+        </a>
+        <a href="/porsche" class="w-full border border-black aspect-2/1 rounded-lg overflow-hidden">
+            <img src="{{ url_for('static', filename='porsche_pretty.png') }}" alt="Porsche Button" class="w-full h-full object-cover object-center scale-101">
+        </a>
     </div>
 </body>
 </html>

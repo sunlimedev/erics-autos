@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- boilerplate -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- css -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ url_for('static', filename='favicon-96x96.png') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    <!-- page title -->
+    <title>Log In</title>
+</head>
+<body class="min-h-dvh">
+    <!-- full page -->
+    <form method="POST" name="login-form">
+    <div class="flex flex-col space-y-2 p-2">
+        <!-- header -->
+        <div>
+            <!-- header text -->
+            <div class="flex justify-center w-full">
+                <img class="w-1/2" src="{{ url_for('static', filename='garage.svg') }}" alt="Garage Icon">
+            </div>
+        </div>
+        <!-- alert -->
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="bg-red-200 text-red-700 border border-red-700 p-3 rounded-lg">
+            {{ messages[-1] }}
+        </div>
+        {% endif %}
+        {% endwith %}
+        <!-- form fields -->
+        <div>
+            <label for="username" class="text-lg">
+                Username
+            </label>
+            <input id="username" name="username" type="text" required class="w-full rounded-lg p-3 border">
+        </div>
+        <div>
+            <label for="password" class="text-lg">
+                Password
+            </label>
+            <input id="password" name="password" type="password" required class="w-full rounded-lg p-3 border">
+        </div>
+        <button type="submit" class="text-lg rounded-lg p-3 bg-blue-500 hover:bg-blue-600 mt-3">
+            Log In
+        </button>
+    </div>
+    </form>
+</body>
+</html>
