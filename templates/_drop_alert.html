@@ -1,0 +1,12 @@
+    <script>
+        setTimeout(() =>
+        {
+            const alertBox = document.getElementById('alert');
+            if (alertBox)
+            {
+                alertBox.style.transition = 'opacity 1s ease';
+                alertBox.style.opacity = '0';
+                setTimeout(() => alertBox.remove(), 1000);
+            }
+        }, 4000);
+    </script>

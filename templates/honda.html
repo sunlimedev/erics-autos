@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% include '_head.html' %}
+    <!-- page title -->
+    <title>Civic Type-R</title>
+</head>
+<body class="bg-black">
+    <!-- centered container -->
+    <div class="min-h-dvh flex justify-center">
+        <!-- close sides -->
+        <div class="w-md p-3">
+            <!-- space out containers -->
+            <div class="space-y-3">
+                <!-- logo -->
+                <div class="flex flex-col items-center">
+                    <div class="w-sm p-1">
+                        <img src="{{ url_for('static', filename='logo/honda.svg') }}" alt="Logo">
+                    </div>
+                </div>
+                <!-- alert -->
+                {% include '_alert.html' %}
+                <!-- car -->
+                <div class="flex flex-col items-center">
+                    <div class="w-sm p-1">
+                        <img src="{{ image_url }}" alt="Car">
+                    </div>
+                </div>
+
+
+                <!-- car data and shit like that -->
+
+
+            </div>
+        </div>
+    </div>
+    <!-- drop alert after 5 seconds -->
+    {% include '_drop_alert.html' %}
+</body>
+</html>

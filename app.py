@@ -1,7 +1,10 @@
 # ------------------ info ----------------------------------------------------------------------------------------------
 
+# 1C398E  tailwind blue-900
 
 # web application for managing car fuel efficiency and more
+
+# flash messages are success, notify, error
 
 
 # ------------------ imports -------------------------------------------------------------------------------------------
@@ -9,6 +12,8 @@
 
 import os
 import sqlite3
+
+from random import randint
 from dotenv import load_dotenv
 from flask import Flask, render_template, redirect, url_for, request, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
@@ -41,6 +46,10 @@ login_manager = LoginManager(app)
 # page to log in
 login_manager.login_view = "log_in"
 
+# adjust default login manager error
+login_manager.login_message = 'Please log in.'
+login_manager.login_message_category = 'error'
+
 # class for users
 class User(UserMixin):
     def __init__(self, user_id, username, hashed_password):
@@ -64,16 +73,16 @@ def log_in():
         password = request.form["password"]
 
         if username is None:
-            flash("Please enter a username.")
+            flash("Please enter a username.", "error")
             return render_template("log_in.html")
         if password is None:
-            flash("Please enter a password.")
+            flash("Please enter a password.", "error")
             return render_template("log_in.html")
 
         db_username, db_password = get_user()
 
         if username != db_username or not check_password_hash(db_password, password):
-            flash("Incorrect username or password.")
+            flash("Incorrect username or password.", "error")
             return render_template("log_in.html")
 
         login_user(User(user_id=1, username=db_username, hashed_password=db_password))
@@ -94,31 +103,31 @@ def update_login():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
-        confirm_password = request.form["confirm_password"]
+        confirm_password = request.form["confirm"]
 
         if username is None:
-            flash("Please enter a username.")
+            flash("Please enter a username.", "error")
             return render_template("update_login.html")
         if password is None:
-            flash("Please enter a password.")
+            flash("Please enter a password.", "error")
             return render_template("update_login.html")
         if len(username) < 4:
-            flash("Username must be at least 4 characters.")
+            flash("Username must be at least 4 characters.", "error")
             return render_template("update_login.html")
         if len(password) < 8:
-            flash("Password must be at least 8 characters.")
+            flash("Password must be at least 8 characters.", "error")
             return render_template("update_login.html")
         if password != confirm_password:
-            flash("Passwords must match.")
+            flash("Passwords must match.", "error")
             return render_template("update_login.html")
 
         overwrite_user(username, password)
 
-        flash("Login information has been updated.")
+        flash("Login information has been updated.", "success")
         return redirect(url_for("home"))
     # GET
     else:
-        flash("You are currently using the default login. Please choose a new username and password.")
+        flash("You are currently using the default login. Please choose a new username and password.", "notify")
         return render_template("update_login.html")
 
 
@@ -129,7 +138,7 @@ def reset_login():
 
     overwrite_user(DEFAULT_USERNAME, DEFAULT_PASSWORD)
 
-    flash("Login information has been reset.")
+    flash("Login information has been reset.", "success")
     return redirect(url_for("log_in"))
 
 
@@ -139,7 +148,7 @@ def reset_login():
 def log_out():
     logout_user()
 
-    flash("You have been logged out.")
+    flash("You have been logged out.", "success")
     return redirect(url_for("log_in"))
 
 
@@ -153,7 +162,11 @@ def home():
     if using_default_login():
         return redirect(url_for("update_login"))
     # GET
-    return render_template("home.html")
+    hyundai_url = url_for("static", filename=f"pretty/hyundai_pretty{randint(1, 4)}.png")
+    honda_url = url_for("static", filename=f"pretty/honda_pretty{randint(1, 4)}.png")
+    porsche_url = url_for("static", filename=f"pretty/porsche_pretty{randint(1, 5)}.png")
+
+    return render_template("home.html", hyundai_url=hyundai_url, honda_url=honda_url, porsche_url=porsche_url)
 
 
 @app.route("/hyundai")
@@ -173,7 +186,9 @@ def honda():
     if using_default_login():
         return redirect(url_for("update_login"))
     # GET
-    return render_template("home.html")
+    image_url = url_for("static", filename=f"turntable/civic{randint(1, 4)}.png")
+
+    return render_template("honda.html", image_url=image_url)
 
 
 @app.route("/porsche")

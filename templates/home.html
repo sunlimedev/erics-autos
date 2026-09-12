@@ -1,39 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- boilerplate -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- css -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- favicon -->
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-    <link rel="icon" type="image/png" sizes="96x96" href="{{ url_for('static', filename='favicon-96x96.png') }}">
-    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+    {% include '_head.html' %}
     <!-- page title -->
     <title>Eric's Garage</title>
 </head>
-<body class="min-h-dvh">
-    <!-- full page -->
-    <div class="flex flex-col space-y-2 p-2">
-        <!-- header -->
-        <div>
-            <!-- header text -->
-            <div class="flex justify-center w-full font-semibold text-3xl">
-                Eric's Garage
+<body class="bg-gray-50">
+    <!-- centered container -->
+    <div class="min-h-dvh flex justify-center">
+        <!-- close sides -->
+        <div class="w-md p-3">
+            <!-- space out containers -->
+            <div class="space-y-3">
+                <!-- home text -->
+                <div class="flex justify-center text-3xl font-semibold text-black">
+                    Eric's Garage
+                </div>
+                <!-- alert -->
+                {% include '_alert.html' %}
+                <!-- buttons -->
+                <a href="/hyundai" class="block w-full border border-black aspect-2/1 rounded-lg overflow-hidden">
+                    <img src="{{ hyundai_url }}" alt="Hyundai Button" class="w-full h-full object-cover object-center scale-101">
+                </a>
+                <a href="/honda" class="block w-full border border-black aspect-2/1 rounded-lg overflow-hidden">
+                    <img src="{{ honda_url }}" alt="Honda Button" class="w-full h-full object-cover object-center scale-101">
+                </a>
+                <a href="/porsche" class="block w-full border border-black aspect-2/1 rounded-lg overflow-hidden">
+                    <img src="{{ porsche_url }}" alt="Porsche Button" class="w-full h-full object-cover object-center scale-101">
+                </a>
             </div>
         </div>
-        <!-- buttons -->
-        <a href="/hyundai" class="w-full border border-black aspect-2/1 rounded-lg overflow-hidden">
-            <img src="{{ url_for('static', filename='hyundai_pretty.png') }}" alt="Hyundai Button" class="w-full h-full object-cover object-center scale-101">
-        </a>
-        <a href="/honda" class="w-full border border-black aspect-2/1 rounded-lg overflow-hidden">
-            <img src="{{ url_for('static', filename='honda_pretty.png') }}" alt="Honda Button" class="w-full h-full object-cover object-center scale-101">
-        </a>
-        <a href="/porsche" class="w-full border border-black aspect-2/1 rounded-lg overflow-hidden">
-            <img src="{{ url_for('static', filename='porsche_pretty.png') }}" alt="Porsche Button" class="w-full h-full object-cover object-center scale-101">
-        </a>
     </div>
+    <!-- drop alert after 5 seconds -->
+    {% include '_drop_alert.html' %}
 </body>
 </html>
