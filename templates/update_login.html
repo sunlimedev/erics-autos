@@ -12,37 +12,33 @@
         <div class="w-md p-3">
             <!-- update login form -->
             <form method="POST" class="space-y-3">
+                <!-- csrf token -->
+                {{ form.hidden_tag() }}
                 <!-- update text -->
                 <div class="flex justify-center text-2xl font-semibold text-black">
                     Update Login
                 </div>
                 <!-- alert -->
                 {% include '_alert.html' %}
+                <!-- form error -->
+                {% include '_error.html' %}
                 <!-- username field -->
                 <div>
-                    <label for="username" class="block text-lg font-medium text-gray-700">
-                        Username
-                    </label>
-                    <input id="username" name="username" type="text" placeholder="Minimum 4 characters" minlength="4" class="w-full p-3 border border-gray-300 rounded-lg transition">
+                    {{ form.username.label(class_="block text-lg font-medium text-gray-700") }}
+                    {{ form.username(class_="w-full p-3 border border-gray-300 rounded-lg transition", placeholder="Minimum 4 characters", minlength="4", maxlength="32") }}
                 </div>
                 <!-- password field -->
                 <div>
-                    <label for="password" class="block text-lg font-medium text-gray-700">
-                        Password
-                    </label>
-                    <input id="password" name="password" type="password" placeholder="Minimum 8 characters" minlength="8" required class="w-full p-3 border border-gray-300 rounded-lg transition">
+                    {{ form.password.label(class_="block text-lg font-medium text-gray-700") }}
+                    {{ form.password(class_="w-full p-3 border border-gray-300 rounded-lg transition", placeholder="Minimum 8 characters", minlength="8", maxlength="32") }}
                 </div>
                 <!-- confirm password field -->
                 <div>
-                    <label for="confirm" class="block text-lg font-medium text-gray-700">
-                        Confirm Password
-                    </label>
-                    <input id="confirm" name="confirm" type="password" required class="w-full p-3 border border-gray-300 rounded-lg transition">
+                    {{ form.confirm.label(class_="block text-lg font-medium text-gray-700") }}
+                    {{ form.confirm(class_="w-full p-3 border border-gray-300 rounded-lg transition", placeholder="Must match above") }}
                 </div>
                 <!-- submit button -->
-                <button type="submit" class="w-full bg-blue-900 hover:bg-blue-950 text-lg text-white font-medium p-3 rounded-lg transition shadow-md hover:shadow-lg mt-3 cursor-pointer">
-                    Update
-                </button>
+                {{ form.submit(class_="w-full bg-blue-900 hover:bg-blue-950 text-lg text-white font-medium p-3 rounded-lg transition shadow-md hover:shadow-lg mt-3 cursor-pointer") }}
             </form>
         </div>
     </div>

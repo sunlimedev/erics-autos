@@ -17,8 +17,10 @@ from random import randint
 from dotenv import load_dotenv
 from flask import Flask, render_template, redirect, url_for, request, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
+from flask_wtf import FlaskForm
 from werkzeug.security import generate_password_hash, check_password_hash
-
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired, Length, EqualTo
 
 # ------------------ constants -----------------------------------------------------------------------------------------
 
@@ -58,7 +60,23 @@ class User(UserMixin):
         self.hashed_password = hashed_password
 
 
-# ------------------ log in/out routes -------------------------------------------------------------------------------------
+# ------------------ forms ---------------------------------------------------------------------------------------------
+
+
+class LogInForm(FlaskForm):
+    username = StringField(label="Username", validators=[DataRequired()])
+    password = PasswordField(label="Password", validators=[DataRequired()])
+    submit = SubmitField()
+
+
+class UpdateLoginForm(FlaskForm):
+    username = StringField(label="Username", validators=[DataRequired(), Length(min=4, max=32)])
+    password = PasswordField(label="Password", validators=[DataRequired(), Length(min=8, max=32)])
+    confirm = PasswordField(label="Confirm Password", validators=[DataRequired(), EqualTo(fieldname="password", message="Passwords must match.")])
+    submit = SubmitField()
+
+
+# ------------------ log in/out routes ---------------------------------------------------------------------------------
 
 
 # log in
@@ -67,29 +85,26 @@ def log_in():
     # checks
     if current_user.is_authenticated:
         return redirect(url_for("home"))
-    # POST
-    elif request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
 
-        if username is None:
-            flash("Please enter a username.", "error")
-            return render_template("log_in.html")
-        if password is None:
-            flash("Please enter a password.", "error")
-            return render_template("log_in.html")
+    # form
+    form = LogInForm()
+
+    # POST
+    if form.validate_on_submit():
+        # get data if validated
+        username = form.username.data
+        password = form.password.data
 
         db_username, db_password = get_user()
 
         if username != db_username or not check_password_hash(db_password, password):
             flash("Incorrect username or password.", "error")
-            return render_template("log_in.html")
+            return render_template("log_in.html", form=form)
 
         login_user(User(user_id=1, username=db_username, hashed_password=db_password))
         return redirect(url_for("home"))
     # GET
-    else:
-        return render_template("log_in.html")
+    return render_template("log_in.html", form=form)
 
 
 # update login from default
@@ -99,36 +114,27 @@ def update_login():
     # checks
     if not using_default_login():
         return redirect(url_for("home"))
-    # POST
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-        confirm_password = request.form["confirm"]
 
-        if username is None:
-            flash("Please enter a username.", "error")
-            return render_template("update_login.html")
-        if password is None:
-            flash("Please enter a password.", "error")
-            return render_template("update_login.html")
-        if len(username) < 4:
-            flash("Username must be at least 4 characters.", "error")
-            return render_template("update_login.html")
-        if len(password) < 8:
-            flash("Password must be at least 8 characters.", "error")
-            return render_template("update_login.html")
+    # form
+    form = UpdateLoginForm()
+
+    # POST
+    if form.validate_on_submit():
+        username = form.username.data
+        password = form.password.data
+        confirm_password = form.confirm.data
+
         if password != confirm_password:
             flash("Passwords must match.", "error")
-            return render_template("update_login.html")
+            return render_template("update_login.html", form=form)
 
         overwrite_user(username, password)
 
         flash("Login information has been updated.", "success")
         return redirect(url_for("home"))
     # GET
-    else:
-        flash("You are currently using the default login. Please choose a new username and password.", "notify")
-        return render_template("update_login.html")
+    flash("You are currently using the default login. Please choose a new username and password.", "notify")
+    return render_template("update_login.html", form=form)
 
 
 # reset login to default

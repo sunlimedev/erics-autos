@@ -19,13 +19,13 @@
                 <!-- alert -->
                 {% include '_alert.html' %}
                 <!-- buttons -->
-                <a href="/hyundai" class="block w-full border border-black aspect-2/1 rounded-lg overflow-hidden">
+                <a href="{{ url_for('hyundai') }}" class="block drop-shadow-xl/25 w-full aspect-2/1 rounded-lg overflow-hidden">
                     <img src="{{ hyundai_url }}" alt="Hyundai Button" class="w-full h-full object-cover object-center scale-101">
                 </a>
-                <a href="/honda" class="block w-full border border-black aspect-2/1 rounded-lg overflow-hidden">
+                <a href="{{ url_for('honda') }}" class="block drop-shadow-xl/25 w-full aspect-2/1 rounded-lg overflow-hidden">
                     <img src="{{ honda_url }}" alt="Honda Button" class="w-full h-full object-cover object-center scale-101">
                 </a>
-                <a href="/porsche" class="block w-full border border-black aspect-2/1 rounded-lg overflow-hidden">
+                <a href="{{ url_for('porsche') }}" class="block drop-shadow-xl/25 w-full aspect-2/1 rounded-lg overflow-hidden">
                     <img src="{{ porsche_url }}" alt="Porsche Button" class="w-full h-full object-cover object-center scale-101">
                 </a>
             </div>

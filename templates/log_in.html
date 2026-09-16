@@ -12,30 +12,28 @@
         <div class="w-md p-3">
             <!-- login form -->
             <form method="POST" class="space-y-3">
+                <!-- csrf token -->
+                {{ form.hidden_tag() }}
                 <!-- login text -->
                 <div class="flex justify-center text-2xl font-semibold text-black">
                     Log In
                 </div>
                 <!-- alert -->
                 {% include '_alert.html' %}
+                <!-- form error -->
+                {% include '_error.html' %}
                 <!-- username field -->
                 <div>
-                    <label for="username" class="block text-lg font-medium text-gray-700">
-                        Username
-                    </label>
-                    <input id="username" name="username" type="text" required class="w-full p-3 border border-gray-300 rounded-lg transition">
+                    {{ form.username.label(class_="block text-lg font-medium text-gray-700") }}
+                    {{ form.username(class_="w-full p-3 border border-gray-300 rounded-lg transition") }}
                 </div>
                 <!-- password field -->
                 <div>
-                    <label for="password" class="block text-lg font-medium text-gray-700">
-                        Password
-                    </label>
-                    <input id="password" name="password" type="password" required class="w-full p-3 border border-gray-300 rounded-lg transition">
+                    {{ form.password.label(class_="block text-lg font-medium text-gray-700") }}
+                    {{ form.password(class_="w-full p-3 border border-gray-300 rounded-lg transition") }}
                 </div>
                 <!-- submit button -->
-                <button type="submit" class="w-full bg-blue-900 hover:bg-blue-950 text-lg text-white font-medium p-3 rounded-lg transition shadow-md hover:shadow-lg mt-3 cursor-pointer">
-                    Login
-                </button>
+                {{ form.submit(class_="w-full bg-blue-900 hover:bg-blue-950 text-lg text-white font-medium p-3 rounded-lg transition shadow-md hover:shadow-lg mt-3 cursor-pointer") }}
             </form>
         </div>
     </div>
