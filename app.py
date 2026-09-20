@@ -1,9 +1,8 @@
 # ------------------ info ----------------------------------------------------------------------------------------------
 
+
 # 1C398E  tailwind blue-900
-
 # web application for managing car fuel efficiency and more
-
 # flash messages are success, notify, error
 
 
@@ -11,16 +10,18 @@
 
 
 import os
+import csv
 import sqlite3
 
 from random import randint
 from dotenv import load_dotenv
-from flask import Flask, render_template, redirect, url_for, request, flash
+from flask import Flask, render_template, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from flask_wtf import FlaskForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Length, EqualTo
+
 
 # ------------------ constants -----------------------------------------------------------------------------------------
 
@@ -66,14 +67,14 @@ class User(UserMixin):
 class LogInForm(FlaskForm):
     username = StringField(label="Username", validators=[DataRequired()])
     password = PasswordField(label="Password", validators=[DataRequired()])
-    submit = SubmitField()
+    submit = SubmitField(label="Log In")
 
 
 class UpdateLoginForm(FlaskForm):
     username = StringField(label="Username", validators=[DataRequired(), Length(min=4, max=32)])
     password = PasswordField(label="Password", validators=[DataRequired(), Length(min=8, max=32)])
     confirm = PasswordField(label="Confirm Password", validators=[DataRequired(), EqualTo(fieldname="password", message="Passwords must match.")])
-    submit = SubmitField()
+    submit = SubmitField(label="Log In")
 
 
 # ------------------ log in/out routes ---------------------------------------------------------------------------------
@@ -182,7 +183,9 @@ def hyundai():
     if using_default_login():
         return redirect(url_for("update_login"))
     # GET
-    return render_template("home.html")
+    hyundai_stats = generate_hyundai_stats()
+
+    return render_template("hyundai.html", car_stats=hyundai_stats)
 
 
 @app.route("/honda")
@@ -192,9 +195,9 @@ def honda():
     if using_default_login():
         return redirect(url_for("update_login"))
     # GET
-    image_url = url_for("static", filename=f"turntable/civic{randint(1, 4)}.png")
+    honda_stats = generate_honda_stats()
 
-    return render_template("honda.html", image_url=image_url)
+    return render_template("honda.html", car_stats=honda_stats)
 
 
 @app.route("/porsche")
@@ -204,7 +207,17 @@ def porsche():
     if using_default_login():
         return redirect(url_for("update_login"))
     # GET
-    return render_template("home.html")
+    porsche_stats = generate_porsche_stats()
+
+    return render_template("porsche.html", car_stats=porsche_stats)
+
+
+# ------------------ data functions ------------------------------------------------------------------------------------
+
+
+
+
+
 
 
 # ------------------ helper functions ----------------------------------------------------------------------------------
@@ -225,6 +238,177 @@ def load_user(user_id):
     if user_data:
         return User(user_data["user_id"], user_data["username"], user_data["password"])
     return None
+
+
+# load hyundai data
+def generate_hyundai_stats():
+    # mm/dd/yy
+    date = []
+    # .0
+    miles_per_tank = []
+    # .0
+    miles_kwh_per_tank = []
+    # 00
+    start_charge_per_tank = []
+    # .00
+    kwh_per_tank = []
+    # .00
+    dollars_per_tank = []
+    # 00
+    end_charge_per_tank = []
+
+    # pull data from csv
+    try:
+        with open("data/hyundai.csv", "r", encoding="utf-8") as file:
+            reader = csv.reader(file)
+            next(reader)
+
+            hyundai_stats = {}
+
+            for row in reader:
+                date.append(row[0])
+                miles_per_tank.append(float(row[2]))
+                miles_kwh_per_tank.append(float(row[3]))
+                start_charge_per_tank.append(float(row[4][:-1]))
+                kwh_per_tank.append(float(row[5]))
+                dollars_per_tank.append(float(row[6][1:]))
+                end_charge_per_tank.append(float(row[7][:-1]))
+    except OSError:
+        return {"error": "data failure"}
+
+    # do data science
+    kwh_cost_per_tank = []
+    for i in range(len(date)):
+        cost = dollars_per_tank[i] / kwh_per_tank[i]
+        kwh_cost_per_tank.append(cost)
+
+    # real value
+    hyundai_stats["Lifetime efficiency"] = f"{sum(miles_per_tank) / sum(kwh_per_tank, 2):.1f} mi/kWh"
+    # car estimate
+    hyundai_stats["Most efficient tank"] = f"{max(miles_kwh_per_tank):.1f} mi/kWh"
+    hyundai_stats["Least efficient tank"] = f"{min(miles_kwh_per_tank):.1f} mi/kWh"
+
+    hyundai_stats["Lifetime energy cost"] = f"${sum(dollars_per_tank):.2f}"
+    hyundai_stats["Lifetime kWh cost"] = f"${(sum(dollars_per_tank) / sum(kwh_per_tank)):.3f}"
+    hyundai_stats["Most expensive kWh"] = f"${max(kwh_cost_per_tank):.3f}"
+    hyundai_stats["Least expensive kWh"] = f"${min(kwh_cost_per_tank):.3f}"
+
+    hyundai_stats["Odometer"] = f"{(sum(miles_per_tank) + 17):.0f} miles"
+    hyundai_stats["Average tank distance"] = f"{sum(miles_per_tank) / len(miles_per_tank):.1f} miles"
+    hyundai_stats["Longest tank distance"] = f"{max(miles_per_tank):.1f} miles"
+    hyundai_stats["Shortest tank distance"] = f"{min(miles_per_tank):.1f} miles"
+
+    return hyundai_stats
+
+
+# load honda data
+def generate_honda_stats():
+    # mm/dd/yy
+    date = []
+    # .0
+    miles_per_tank = []
+    # .000
+    gallons_per_tank = []
+    # .00
+    dollars_per_tank = []
+
+    # pull data from csv
+    try:
+        with open("data/honda.csv", "r", encoding="utf-8") as file:
+            reader = csv.reader(file)
+            next(reader)
+
+            honda_stats = {}
+
+            for row in reader:
+                date.append(row[0])
+                miles_per_tank.append(float(row[2]))
+                gallons_per_tank.append(float(row[3]))
+                dollars_per_tank.append(float(row[5][1:]))
+    except OSError:
+        return {"error": "data failure"}
+
+    # do data science
+    mpg_per_tank = []
+    for i in range(len(date)):
+        mpg = miles_per_tank[i] / gallons_per_tank[i]
+        mpg_per_tank.append(mpg)
+
+    gallon_cost_per_tank = []
+    for i in range(len(date)):
+        cost = dollars_per_tank[i] / gallons_per_tank[i]
+        gallon_cost_per_tank.append(cost)
+
+    honda_stats["Lifetime efficiency"] = f"{sum(miles_per_tank) / sum(gallons_per_tank, 2):.1f} mpg"
+    honda_stats["Most efficient tank"] = f"{max(mpg_per_tank):.1f} mpg"
+    honda_stats["Least efficient tank"] = f"{min(mpg_per_tank):.1f} mpg"
+
+    honda_stats["Lifetime fuel cost"] = f"${sum(dollars_per_tank):.2f}"
+    honda_stats["Lifetime gallon cost"] = f"${(sum(dollars_per_tank) / sum(gallons_per_tank)):.3f}"
+    honda_stats["Most expensive gallon"] = f"${max(gallon_cost_per_tank):.3f}"
+    honda_stats["Least expensive gallon"] = f"${min(gallon_cost_per_tank):.3f}"
+
+    honda_stats["Odometer"] = f"{sum(miles_per_tank):.0f} miles"
+    honda_stats["Average tank distance"] = f"{sum(miles_per_tank) / len(miles_per_tank):.1f} miles"
+    honda_stats["Longest tank distance"] = f"{max(miles_per_tank):.1f} miles"
+    honda_stats["Shortest tank distance"] = f"{min(miles_per_tank):.1f} miles"
+
+    return honda_stats
+
+
+# load porsche data
+def generate_porsche_stats():
+    # mm/dd/yy
+    date = []
+    # .0
+    miles_per_tank = []
+    # .000
+    gallons_per_tank = []
+    # .00
+    dollars_per_tank = []
+
+    # pull data from csv
+    try:
+        with open("data/porsche.csv", "r", encoding="utf-8") as file:
+            reader = csv.reader(file)
+            next(reader)
+
+            porsche_stats = {}
+
+            for row in reader:
+                date.append(row[0])
+                miles_per_tank.append(float(row[2]))
+                gallons_per_tank.append(float(row[3]))
+                dollars_per_tank.append(float(row[5][1:]))
+    except OSError:
+        return {"error": "data failure"}
+
+    # do data science
+    mpg_per_tank = []
+    for i in range(len(date)):
+        mpg = miles_per_tank[i] / gallons_per_tank[i]
+        mpg_per_tank.append(mpg)
+
+    gallon_cost_per_tank = []
+    for i in range(len(date)):
+        cost = dollars_per_tank[i] / gallons_per_tank[i]
+        gallon_cost_per_tank.append(cost)
+
+    porsche_stats["Lifetime efficiency"] = f"{sum(miles_per_tank) / sum(gallons_per_tank, 2):.1f} mpg"
+    porsche_stats["Most efficient tank"] = f"{max(mpg_per_tank):.1f} mpg"
+    porsche_stats["Least efficient tank"] = f"{min(mpg_per_tank):.1f} mpg"
+
+    porsche_stats["Lifetime fuel cost"] = f"${sum(dollars_per_tank):.2f}"
+    porsche_stats["Lifetime gallon cost"] = f"${(sum(dollars_per_tank) / sum(gallons_per_tank)):.3f}"
+    porsche_stats["Most expensive gallon"] = f"${max(gallon_cost_per_tank):.3f}"
+    porsche_stats["Least expensive gallon"] = f"${min(gallon_cost_per_tank):.3f}"
+
+    porsche_stats["Odometer"] = f"{(sum(miles_per_tank) + 18):.0f} miles"
+    porsche_stats["Average tank distance"] = f"{sum(miles_per_tank) / len(miles_per_tank):.1f} miles"
+    porsche_stats["Longest tank distance"] = f"{max(miles_per_tank):.1f} miles"
+    porsche_stats["Shortest tank distance"] = f"{min(miles_per_tank):.1f} miles"
+
+    return porsche_stats
 
 
 # return connection to database
