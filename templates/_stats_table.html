@@ -1,0 +1,20 @@
+<div class="border border-gray-300 rounded-lg overflow-hidden">
+    <table id="car_stats_table" class="table-fixed w-full text-left border-collapse">
+        <tbody>
+        {% for key, value in car_stats.items() %}
+        <tr class="bg-gray-200 even:bg-gray-100 hover:bg-gray-300 text-gray-700">
+            <th class="w-3/5 p-2">
+                {{ key }}
+            </th>
+            <td class="w-2/5 p-2">
+                {% if value is none %}
+                    None
+                {% else %}
+                    {{ value }}
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>

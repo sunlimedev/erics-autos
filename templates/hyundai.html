@@ -3,7 +3,7 @@
 <head>
     {% include '_head.html' %}
     <!-- page title -->
-    <title>Civic Type-R</title>
+    <title>IONIQ 5</title>
 </head>
 <body class="bg-gray-50">
     <!-- centered container -->
@@ -14,8 +14,8 @@
             <div class="space-y-3">
                 <!-- logo -->
                 <div class="flex flex-col items-center">
-                    <div class="w-2xs">
-                        <img src="{{ url_for('static', filename='logo/honda.svg') }}" alt="Logo">
+                    <div class="w-3xs">
+                        <img src="{{ url_for('static', filename='logo/hyundai.svg') }}" alt="Logo">
                     </div>
                 </div>
                 <!-- alert -->
@@ -23,11 +23,11 @@
                 <!-- car data -->
                 {% include '_stats_table.html' %}
                 <!-- log data -->
-                <a href="{{ url_for('honda') }}" class="block text-center bg-blue-900 hover:bg-blue-950 text-lg text-white font-medium p-3 rounded-lg transition shadow-md hover:shadow-lg cursor-pointer">
+                <a href="{{ url_for('hyundai') }}" class="block text-center bg-blue-900 hover:bg-blue-950 text-lg text-white font-medium p-3 rounded-lg transition shadow-md hover:shadow-lg cursor-pointer">
                     Log Data
                 </a>
                 <!-- deep insights -->
-                <a href="{{ url_for('honda') }}" class="block text-center bg-blue-900 hover:bg-blue-950 text-lg text-white font-medium p-3 rounded-lg transition shadow-md hover:shadow-lg cursor-pointer">
+                <a href="{{ url_for('hyundai') }}" class="block text-center bg-blue-900 hover:bg-blue-950 text-lg text-white font-medium p-3 rounded-lg transition shadow-md hover:shadow-lg cursor-pointer">
                     View Deep Insights
                 </a>
             </div>
