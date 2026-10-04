@@ -21,6 +21,7 @@ from flask_wtf import FlaskForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Length, EqualTo
+from contextlib import contextmanager
 
 
 # ------------------ constants -----------------------------------------------------------------------------------------
@@ -32,6 +33,9 @@ DEFAULT_USERNAME = os.getenv("DEFAULT_USERNAME")
 DEFAULT_PASSWORD = os.getenv("DEFAULT_PASSWORD")
 
 RESET_LOGIN_ROUTE = os.getenv("RESET_LOGIN_ROUTE")
+
+HOST = "0.0.0.0"
+PORT = 5000
 
 
 # ------------------ flask ---------------------------------------------------------------------------------------------
@@ -65,16 +69,47 @@ class User(UserMixin):
 
 
 class LogInForm(FlaskForm):
-    username = StringField(label="Username", validators=[DataRequired()])
-    password = PasswordField(label="Password", validators=[DataRequired()])
-    submit = SubmitField(label="Log In")
+    username = StringField(
+        label="Username",
+        validators=[DataRequired()]
+    )
+    password = PasswordField(
+        label="Password",
+        validators=[DataRequired()]
+    )
+    submit = SubmitField(
+        label="Log In"
+    )
 
 
 class UpdateLoginForm(FlaskForm):
-    username = StringField(label="Username", validators=[DataRequired(), Length(min=4, max=32)])
-    password = PasswordField(label="Password", validators=[DataRequired(), Length(min=8, max=32)])
-    confirm = PasswordField(label="Confirm Password", validators=[DataRequired(), EqualTo(fieldname="password", message="Passwords must match.")])
-    submit = SubmitField(label="Log In")
+    username = StringField(
+        label="Username",
+        validators=[DataRequired(), Length(min=4, max=32)]
+    )
+    password = PasswordField(
+        label="Password",
+        validators=[DataRequired(), Length(min=8, max=32)]
+    )
+    confirm = PasswordField(
+        label="Confirm Password",
+        validators=[DataRequired(), EqualTo(fieldname="password", message="Passwords must match.")]
+    )
+    submit = SubmitField(
+        label="Log In"
+    )
+
+
+class HyundaiFuelForm(FlaskForm):
+    pass
+
+
+class HondaFuelForm(FlaskForm):
+    pass
+
+
+class PorscheFuelForm(FlaskForm):
+    pass
 
 
 # ------------------ log in/out routes ---------------------------------------------------------------------------------
@@ -104,6 +139,7 @@ def log_in():
 
         login_user(User(user_id=1, username=db_username, hashed_password=db_password))
         return redirect(url_for("home"))
+
     # GET
     return render_template("log_in.html", form=form)
 
@@ -133,6 +169,7 @@ def update_login():
 
         flash("Login information has been updated.", "success")
         return redirect(url_for("home"))
+
     # GET
     flash("You are currently using the default login. Please choose a new username and password.", "notify")
     return render_template("update_login.html", form=form)
@@ -168,6 +205,7 @@ def home():
     # checks
     if using_default_login():
         return redirect(url_for("update_login"))
+
     # GET
     hyundai_url = url_for("static", filename=f"pretty/hyundai_pretty{randint(1, 4)}.png")
     honda_url = url_for("static", filename=f"pretty/honda_pretty{randint(1, 4)}.png")
@@ -182,6 +220,7 @@ def hyundai():
     # checks
     if using_default_login():
         return redirect(url_for("update_login"))
+
     # GET
     hyundai_stats = generate_hyundai_stats()
 
@@ -194,6 +233,7 @@ def honda():
     # checks
     if using_default_login():
         return redirect(url_for("update_login"))
+
     # GET
     honda_stats = generate_honda_stats()
 
@@ -206,6 +246,7 @@ def porsche():
     # checks
     if using_default_login():
         return redirect(url_for("update_login"))
+
     # GET
     porsche_stats = generate_porsche_stats()
 
@@ -213,31 +254,6 @@ def porsche():
 
 
 # ------------------ data functions ------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-# ------------------ helper functions ----------------------------------------------------------------------------------
-
-
-# load user from database
-@login_manager.user_loader
-def load_user(user_id):
-    conn, cur = get_database()
-
-    query = "SELECT * FROM users WHERE user_id = ?"
-    cur.execute(query, (user_id,))
-
-    user_data = cur.fetchone()
-
-    conn.close()
-
-    if user_data:
-        return User(user_data["user_id"], user_data["username"], user_data["password"])
-    return None
 
 
 # load hyundai data
@@ -411,29 +427,49 @@ def generate_porsche_stats():
     return porsche_stats
 
 
-# return connection to database
+# ------------------ helper functions ----------------------------------------------------------------------------------
+
+
+# load user from database
+@login_manager.user_loader
+def load_user(user_id):
+    with get_database() as (conn, cur):
+        query = "SELECT * FROM users WHERE user_id = ?"
+        cur.execute(query, (user_id,))
+        user_data = cur.fetchone()
+
+    if user_data:
+        return User(user_data["user_id"], user_data["username"], user_data["password"])
+    return None
+
+
+# yield connection to database
+@contextmanager
 def get_database():
     conn = sqlite3.connect("app.db")
     conn.row_factory = sqlite3.Row
-
     cur = conn.cursor()
 
-    return conn, cur
+    try:
+        yield conn, cur
+        conn.commit()
+    except sqlite3.Error:
+        conn.rollback()
+    finally:
+        conn.close()
+
+    return
 
 
 # check if user has not created account
 def using_default_login():
-    conn, cur = get_database()
+    with get_database() as (conn, cur):
+        query = "SELECT password FROM users WHERE user_id = 1"
+        cur.execute(query)
+        credentials = cur.fetchone()
 
-    query = "SELECT password FROM users WHERE user_id = 1"
-    cur.execute(query)
-
-    row = cur.fetchone()
-
-    conn.close()
-
-    if row["password"] is not None and DEFAULT_PASSWORD is not None:
-        if not check_password_hash(row["password"], DEFAULT_PASSWORD):
+    if credentials["password"] is not None and DEFAULT_PASSWORD is not None:
+        if not check_password_hash(credentials["password"], DEFAULT_PASSWORD):
             return False
 
     return True
@@ -441,34 +477,28 @@ def using_default_login():
 
 # get user from database in tuple (user, pass)
 def get_user():
-    conn, cur = get_database()
+    with get_database() as (conn, cur):
+        query = "SELECT username, password FROM users WHERE user_id = 1"
+        cur.execute(query)
+        credentials = cur.fetchone()
 
-    query = "SELECT username, password FROM users WHERE user_id = 1"
-    cur.execute(query)
-
-    row = cur.fetchone()
-
-    conn.close()
-
-    return row
+    return credentials
 
 
 # overwrite existing data with new user
 def overwrite_user(username, password):
-    conn, cur = get_database()
-
     hashed_password = generate_password_hash(password)
-    query = "INSERT OR REPLACE INTO users (user_id, username, password) VALUES (?, ?, ?)"
-    parameters = (1, username, hashed_password)
 
-    with conn:
+    with get_database() as (conn, cur):
+        query = "INSERT OR REPLACE INTO users (user_id, username, password) VALUES (?, ?, ?)"
+        parameters = (1, username, hashed_password)
         cur.execute(query, parameters)
 
-    conn.close()
+    return
 
 
 # ------------------ app start -----------------------------------------------------------------------------------------
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    app.run(host=HOST, port=PORT, debug=True)
