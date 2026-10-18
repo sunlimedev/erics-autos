@@ -1,37 +1,30 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    {% include '_head.html' %}
-    <!-- page title -->
-    <title>Eric's Garage</title>
-</head>
-<body class="bg-gray-50">
-    <!-- centered container -->
-    <div class="min-h-dvh flex justify-center">
-        <!-- close sides -->
-        <div class="w-md p-3">
-            <!-- space out containers -->
-            <div class="space-y-3">
-                <!-- home text -->
-                <div class="flex justify-center text-3xl font-semibold text-black">
-                    Eric's Garage
-                </div>
-                <!-- alert -->
-                {% include '_alert.html' %}
-                <!-- buttons -->
-                <a href="{{ url_for('hyundai') }}" class="block drop-shadow-xl/25 w-full aspect-2/1 rounded-lg overflow-hidden">
-                    <img src="{{ hyundai_url }}" alt="Hyundai Button" class="w-full h-full object-cover object-center scale-101">
-                </a>
-                <a href="{{ url_for('honda') }}" class="block drop-shadow-xl/25 w-full aspect-2/1 rounded-lg overflow-hidden">
-                    <img src="{{ honda_url }}" alt="Honda Button" class="w-full h-full object-cover object-center scale-101">
-                </a>
-                <a href="{{ url_for('porsche') }}" class="block drop-shadow-xl/25 w-full aspect-2/1 rounded-lg overflow-hidden">
-                    <img src="{{ porsche_url }}" alt="Porsche Button" class="w-full h-full object-cover object-center scale-101">
-                </a>
-            </div>
+{% extends "_base.html" %}
+
+{% block title %}My Garage{% endblock %}
+
+{% block content %}
+    <div class="space-y-3">
+        <!-- text -->
+        <div class="flex justify-center text-3xl font-semibold text-black">
+            Eric's Garage
         </div>
+        {% include '_alert.html' %}
+        <!-- hyundai button -->
+        <a href="{{ url_for('hyundai') }}" class="block drop-shadow-xl/25 w-full aspect-2/1 rounded-lg overflow-hidden">
+            <img src="{{ hyundai_url }}" alt="Hyundai Button" class="w-full h-full object-cover object-center scale-101">
+        </a>
+        <!-- honda button -->
+        <a href="{{ url_for('honda') }}" class="block drop-shadow-xl/25 w-full aspect-2/1 rounded-lg overflow-hidden">
+            <img src="{{ honda_url }}" alt="Honda Button" class="w-full h-full object-cover object-center scale-101">
+        </a>
+        <!-- porsche button -->
+        <a href="{{ url_for('porsche') }}" class="block drop-shadow-xl/25 w-full aspect-2/1 rounded-lg overflow-hidden">
+            <img src="{{ porsche_url }}" alt="Porsche Button" class="w-full h-full object-cover object-center scale-101">
+        </a>
     </div>
-    <!-- drop alert after 5 seconds -->
+{% endblock %}
+
+{% block script %}
+    <!-- alert script -->
     {% include '_drop_alert.html' %}
-</body>
-</html>
+{% endblock %}

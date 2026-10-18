@@ -1,9 +1,10 @@
-# ------------------ info ----------------------------------------------------------------------------------------------
+# This file contains a Flask application for vehicle fuel data recording.
 
+# Flash messages have three categories: success, notify, error.
+# These messages are green, yellow, and red, respectively.
 
-# 1C398E  tailwind blue-900
-# web application for managing car fuel efficiency and more
-# flash messages are success, notify, error
+# The SQLite database is assumed to be working and formatted correctly.
+# Other data sources like .csv files use a try except pattern for all access.
 
 
 # ------------------ imports -------------------------------------------------------------------------------------------
@@ -13,27 +14,33 @@ import os
 import csv
 import sqlite3
 
+from pathlib import Path
 from random import randint
+from datetime import datetime
 from dotenv import load_dotenv
 from flask import Flask, render_template, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
-from flask_wtf import FlaskForm
 from werkzeug.security import generate_password_hash, check_password_hash
-from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Length, EqualTo
 from contextlib import contextmanager
+
+from backup import send_email
+from forms import LogInForm, UpdateLoginForm, HyundaiDistanceForm, HyundaiChargeForm, FuelForm
 
 
 # ------------------ constants -----------------------------------------------------------------------------------------
 
 
+# load environment variables
 load_dotenv()
 
-DEFAULT_USERNAME = os.getenv("DEFAULT_USERNAME")
-DEFAULT_PASSWORD = os.getenv("DEFAULT_PASSWORD")
+# load default account credentials
+DEFAULT_USERNAME = os.getenv("DEFAULT_USERNAME", "")
+DEFAULT_PASSWORD = os.getenv("DEFAULT_PASSWORD", "")
 
-RESET_LOGIN_ROUTE = os.getenv("RESET_LOGIN_ROUTE")
+# load obscured account reset string
+RESET_LOGIN_ROUTE = os.getenv("RESET_LOGIN_ROUTE", "reset_password")
 
+# server host and port when invoked directly
 HOST = "0.0.0.0"
 PORT = 5000
 
@@ -45,7 +52,7 @@ PORT = 5000
 app = Flask(__name__)
 
 # key for generating sessions
-app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY", "abcdefghjiklmnopqrstuvwxyz")
 
 # login system for users
 login_manager = LoginManager(app)
@@ -53,7 +60,7 @@ login_manager = LoginManager(app)
 # page to log in
 login_manager.login_view = "log_in"
 
-# adjust default login manager error
+# custom login manager error
 login_manager.login_message = 'Please log in.'
 login_manager.login_message_category = 'error'
 
@@ -65,54 +72,7 @@ class User(UserMixin):
         self.hashed_password = hashed_password
 
 
-# ------------------ forms ---------------------------------------------------------------------------------------------
-
-
-class LogInForm(FlaskForm):
-    username = StringField(
-        label="Username",
-        validators=[DataRequired()]
-    )
-    password = PasswordField(
-        label="Password",
-        validators=[DataRequired()]
-    )
-    submit = SubmitField(
-        label="Log In"
-    )
-
-
-class UpdateLoginForm(FlaskForm):
-    username = StringField(
-        label="Username",
-        validators=[DataRequired(), Length(min=4, max=32)]
-    )
-    password = PasswordField(
-        label="Password",
-        validators=[DataRequired(), Length(min=8, max=32)]
-    )
-    confirm = PasswordField(
-        label="Confirm Password",
-        validators=[DataRequired(), EqualTo(fieldname="password", message="Passwords must match.")]
-    )
-    submit = SubmitField(
-        label="Log In"
-    )
-
-
-class HyundaiFuelForm(FlaskForm):
-    pass
-
-
-class HondaFuelForm(FlaskForm):
-    pass
-
-
-class PorscheFuelForm(FlaskForm):
-    pass
-
-
-# ------------------ log in/out routes ---------------------------------------------------------------------------------
+# ------------------ authentication routes -----------------------------------------------------------------------------
 
 
 # log in
@@ -214,7 +174,7 @@ def home():
     return render_template("home.html", hyundai_url=hyundai_url, honda_url=honda_url, porsche_url=porsche_url)
 
 
-@app.route("/hyundai")
+@app.get("/hyundai")
 @login_required
 def hyundai():
     # checks
@@ -227,7 +187,7 @@ def hyundai():
     return render_template("hyundai.html", car_stats=hyundai_stats)
 
 
-@app.route("/honda")
+@app.get("/honda")
 @login_required
 def honda():
     # checks
@@ -235,12 +195,12 @@ def honda():
         return redirect(url_for("update_login"))
 
     # GET
-    honda_stats = generate_honda_stats()
+    stats = generate_gas_stats("honda")
 
-    return render_template("honda.html", car_stats=honda_stats)
+    return render_template("honda.html", car_stats=stats)
 
 
-@app.route("/porsche")
+@app.get("/porsche")
 @login_required
 def porsche():
     # checks
@@ -248,12 +208,227 @@ def porsche():
         return redirect(url_for("update_login"))
 
     # GET
-    porsche_stats = generate_porsche_stats()
+    stats = generate_gas_stats("porsche")
 
-    return render_template("porsche.html", car_stats=porsche_stats)
+    return render_template("porsche.html", car_stats=stats)
 
 
-# ------------------ data functions ------------------------------------------------------------------------------------
+# ------------------ logging routes ------------------------------------------------------------------------------------
+
+
+@app.route("/hyundai/log_data", methods=["GET", "POST"])
+@login_required
+def hyundai_log_data():
+    # checks
+    if using_default_login():
+        return redirect(url_for("update_login"))
+
+    # form
+    file_path = Path("data/hyundai.csv")
+
+    try:
+        with open(file_path, mode="r", newline="", encoding="utf-8") as file:
+            reader = csv.reader(file)
+            headers = next(reader)
+
+            # rip full table
+            date = []
+            odometer = []
+            miles_per_tank = []
+            miles_kwh_per_tank = []
+            start_charge_per_tank = []
+            kwh_per_tank = []
+            dollars_per_tank = []
+            notes = []
+
+            for row in reader:
+                date.append(row[0])
+                odometer.append(row[1])
+                miles_per_tank.append(row[2])
+                miles_kwh_per_tank.append(row[3])
+                start_charge_per_tank.append(row[4])
+                kwh_per_tank.append(row[5])
+                dollars_per_tank.append(row[6])
+                notes.append(row[7])
+
+            # check if last row half-filled
+            last = len(date) - 1
+
+            if kwh_per_tank[last] == "" and dollars_per_tank[last] == "":
+                form, letter = HyundaiChargeForm(), "c"
+            else:
+                form, letter = HyundaiDistanceForm(), "d"
+    except (OSError, csv.Error):
+        flash("Critical data read error.", "error")
+        return redirect(url_for("hyundai"))
+
+    # POST
+    if form.validate_on_submit():
+        file_path = Path("data/hyundai.csv")
+
+        if isinstance(form, HyundaiChargeForm):
+            kwh_per_tank[last] = form.energy.data
+            dollars_per_tank[last] = form.dollars.data
+            notes[last] = form.note.data
+
+            try:
+                with open(file_path, mode="w", newline="", encoding="utf-8") as file:
+                    writer = csv.writer(file)
+
+                    writer.writerow(headers)
+
+                    for i in range(len(date)):
+                        writer.writerow([
+                            date[i],
+                            odometer[i],
+                            miles_per_tank[i],
+                            miles_kwh_per_tank[i],
+                            start_charge_per_tank[i],
+                            kwh_per_tank[i],
+                            f"${dollars_per_tank[i]}" if not str(dollars_per_tank[i]).startswith("$") else dollars_per_tank[i],
+                            notes[i]
+                        ])
+            except (OSError, csv.Error):
+                flash("Data was not saved!", "error")
+                return render_template("hyundai_charge.html", form=form)
+
+            if not send_email(file_path):
+                flash("Data was saved but email was not delivered.", "error")
+            else:
+                flash("Data was saved and backup email was delivered.", "success")
+            return redirect(url_for("hyundai"))
+
+        elif isinstance(form, HyundaiDistanceForm):
+            print("a")
+            try:
+                with open(file_path, mode="a", newline="", encoding="utf-8") as file:
+                    writer = csv.writer(file)
+
+                    row = [
+                        form.date.data,
+                        form.odometer.data,
+                        form.miles.data,
+                        form.efficiency.data,
+                        f"{form.level.data}%",
+                        "",
+                        "",
+                        ""
+                    ]
+
+                    writer.writerow(row)
+                    print("b")
+            except (OSError, csv.Error):
+                print("c")
+                flash("Data was not saved!", "error")
+                return render_template("hyundai_distance.html", form=form)
+
+            print("d")
+            flash("Data was saved!", "success")
+            return redirect(url_for("hyundai"))
+
+    # GET
+    if isinstance(form, HyundaiDistanceForm):
+        form.date.data = datetime.now().strftime("%m/%d/%Y")
+        return render_template("hyundai_distance.html", form=form)
+    elif isinstance(form, HyundaiChargeForm):
+        return render_template("hyundai_charge.html", form=form)
+    else:
+        return redirect(url_for("hyundai"))
+
+
+@app.route("/honda/log_data", methods=["GET", "POST"])
+@login_required
+def honda_log_data():
+    # checks
+    if using_default_login():
+        return redirect(url_for("update_login"))
+
+    # form
+    form = FuelForm()
+
+    # POST
+    if form.validate_on_submit():
+        file_path = Path("data/honda.csv")
+
+        try:
+            with open(file_path, mode="a", newline="", encoding="utf-8") as file:
+                writer = csv.writer(file)
+
+                row = [
+                    form.date.data,
+                    form.odometer.data,
+                    form.miles.data,
+                    form.gallons.data,
+                    form.efficiency.data,
+                    f"${form.tank_cost.data}",
+                    f"${form.gallon_cost.data}",
+                    form.note.data
+                ]
+
+                writer.writerow(row)
+        except (OSError, csv.Error):
+            flash("Data was not saved!", "error")
+            return render_template("gas_log.html", form=form, car="Honda")
+
+        if not send_email(file_path):
+            flash("Data was saved but email was not delivered.", "error")
+        else:
+            flash("Data was saved and backup email was delivered.", "success")
+        return redirect(url_for("honda"))
+
+    # GET
+    form.date.data = datetime.now().strftime("%m/%d/%Y")
+
+    return render_template("gas_log.html", form=form, car="Honda")
+
+
+@app.route("/porsche/log_data", methods=["GET", "POST"])
+@login_required
+def porsche_log_data():
+    # checks
+    if using_default_login():
+        return redirect(url_for("update_login"))
+
+    # form
+    form = FuelForm()
+
+    # POST
+    if form.validate_on_submit():
+        file_path = Path("data/porsche.csv")
+
+        try:
+            with open(file_path, mode="a", newline="", encoding="utf-8") as file:
+                writer = csv.writer(file)
+
+                row = [
+                    form.date.data,
+                    form.odometer.data,
+                    form.miles.data,
+                    form.gallons.data,
+                    form.efficiency.data,
+                    f"${form.tank_cost.data}",
+                    f"${form.gallon_cost.data}",
+                    form.note.data
+                ]
+
+                writer.writerow(row)
+        except (OSError, csv.Error):
+            flash("Data was not saved!", "error")
+            return render_template("gas_log.html", form=form, car="Porsche")
+
+        if not send_email(file_path):
+            flash("Data was saved but email was not delivered.", "error")
+        else:
+            flash("Data was saved and backup email was delivered.", "success")
+        return redirect(url_for("porsche"))
+
+    # GET
+    form.date.data = datetime.now().strftime("%m/%d/%Y")
+
+    return render_template("gas_log.html", form=form, car="Porsche")
+
+
+# ------------------ table functions -----------------------------------------------------------------------------------
 
 
 # load hyundai data
@@ -270,12 +445,12 @@ def generate_hyundai_stats():
     kwh_per_tank = []
     # .00
     dollars_per_tank = []
-    # 00
-    end_charge_per_tank = []
+
+    file_path = Path("data/hyundai.csv")
 
     # pull data from csv
     try:
-        with open("data/hyundai.csv", "r", encoding="utf-8") as file:
+        with open(file_path, mode="r", newline="", encoding="utf-8") as file:
             reader = csv.reader(file)
             next(reader)
 
@@ -288,8 +463,9 @@ def generate_hyundai_stats():
                 start_charge_per_tank.append(float(row[4][:-1]))
                 kwh_per_tank.append(float(row[5]))
                 dollars_per_tank.append(float(row[6][1:]))
-                end_charge_per_tank.append(float(row[7][:-1]))
-    except OSError:
+    except ValueError:
+        return {"Waiting on charge data": "..."}
+    except (OSError, csv.Error):
         return {"error": "data failure"}
 
     # do data science
@@ -317,8 +493,8 @@ def generate_hyundai_stats():
     return hyundai_stats
 
 
-# load honda data
-def generate_honda_stats():
+# load gas car data
+def generate_gas_stats(car: str):
     # mm/dd/yy
     date = []
     # .0
@@ -328,20 +504,22 @@ def generate_honda_stats():
     # .00
     dollars_per_tank = []
 
+    file_path = Path(f"data/{car}.csv")
+
     # pull data from csv
     try:
-        with open("data/honda.csv", "r", encoding="utf-8") as file:
+        with open(file_path, mode="r", newline="", encoding="utf-8") as file:
             reader = csv.reader(file)
             next(reader)
 
-            honda_stats = {}
+            stats = {}
 
             for row in reader:
                 date.append(row[0])
                 miles_per_tank.append(float(row[2]))
                 gallons_per_tank.append(float(row[3]))
                 dollars_per_tank.append(float(row[5][1:]))
-    except OSError:
+    except (OSError, csv.Error):
         return {"error": "data failure"}
 
     # do data science
@@ -355,76 +533,21 @@ def generate_honda_stats():
         cost = dollars_per_tank[i] / gallons_per_tank[i]
         gallon_cost_per_tank.append(cost)
 
-    honda_stats["Lifetime efficiency"] = f"{sum(miles_per_tank) / sum(gallons_per_tank, 2):.1f} mpg"
-    honda_stats["Most efficient tank"] = f"{max(mpg_per_tank):.1f} mpg"
-    honda_stats["Least efficient tank"] = f"{min(mpg_per_tank):.1f} mpg"
+    stats["Lifetime efficiency"] = f"{sum(miles_per_tank) / sum(gallons_per_tank, 2):.1f} mpg"
+    stats["Most efficient tank"] = f"{max(mpg_per_tank):.1f} mpg"
+    stats["Least efficient tank"] = f"{min(mpg_per_tank):.1f} mpg"
 
-    honda_stats["Lifetime fuel cost"] = f"${sum(dollars_per_tank):.2f}"
-    honda_stats["Lifetime gallon cost"] = f"${(sum(dollars_per_tank) / sum(gallons_per_tank)):.3f}"
-    honda_stats["Most expensive gallon"] = f"${max(gallon_cost_per_tank):.3f}"
-    honda_stats["Least expensive gallon"] = f"${min(gallon_cost_per_tank):.3f}"
+    stats["Lifetime fuel cost"] = f"${sum(dollars_per_tank):.2f}"
+    stats["Lifetime gallon cost"] = f"${(sum(dollars_per_tank) / sum(gallons_per_tank)):.3f}"
+    stats["Most expensive gallon"] = f"${max(gallon_cost_per_tank):.3f}"
+    stats["Least expensive gallon"] = f"${min(gallon_cost_per_tank):.3f}"
 
-    honda_stats["Odometer"] = f"{sum(miles_per_tank):.0f} miles"
-    honda_stats["Average tank distance"] = f"{sum(miles_per_tank) / len(miles_per_tank):.1f} miles"
-    honda_stats["Longest tank distance"] = f"{max(miles_per_tank):.1f} miles"
-    honda_stats["Shortest tank distance"] = f"{min(miles_per_tank):.1f} miles"
+    stats["Odometer"] = f"{sum(miles_per_tank):.0f} miles"
+    stats["Average tank distance"] = f"{sum(miles_per_tank) / len(miles_per_tank):.1f} miles"
+    stats["Longest tank distance"] = f"{max(miles_per_tank):.1f} miles"
+    stats["Shortest tank distance"] = f"{min(miles_per_tank):.1f} miles"
 
-    return honda_stats
-
-
-# load porsche data
-def generate_porsche_stats():
-    # mm/dd/yy
-    date = []
-    # .0
-    miles_per_tank = []
-    # .000
-    gallons_per_tank = []
-    # .00
-    dollars_per_tank = []
-
-    # pull data from csv
-    try:
-        with open("data/porsche.csv", "r", encoding="utf-8") as file:
-            reader = csv.reader(file)
-            next(reader)
-
-            porsche_stats = {}
-
-            for row in reader:
-                date.append(row[0])
-                miles_per_tank.append(float(row[2]))
-                gallons_per_tank.append(float(row[3]))
-                dollars_per_tank.append(float(row[5][1:]))
-    except OSError:
-        return {"error": "data failure"}
-
-    # do data science
-    mpg_per_tank = []
-    for i in range(len(date)):
-        mpg = miles_per_tank[i] / gallons_per_tank[i]
-        mpg_per_tank.append(mpg)
-
-    gallon_cost_per_tank = []
-    for i in range(len(date)):
-        cost = dollars_per_tank[i] / gallons_per_tank[i]
-        gallon_cost_per_tank.append(cost)
-
-    porsche_stats["Lifetime efficiency"] = f"{sum(miles_per_tank) / sum(gallons_per_tank, 2):.1f} mpg"
-    porsche_stats["Most efficient tank"] = f"{max(mpg_per_tank):.1f} mpg"
-    porsche_stats["Least efficient tank"] = f"{min(mpg_per_tank):.1f} mpg"
-
-    porsche_stats["Lifetime fuel cost"] = f"${sum(dollars_per_tank):.2f}"
-    porsche_stats["Lifetime gallon cost"] = f"${(sum(dollars_per_tank) / sum(gallons_per_tank)):.3f}"
-    porsche_stats["Most expensive gallon"] = f"${max(gallon_cost_per_tank):.3f}"
-    porsche_stats["Least expensive gallon"] = f"${min(gallon_cost_per_tank):.3f}"
-
-    porsche_stats["Odometer"] = f"{(sum(miles_per_tank) + 18):.0f} miles"
-    porsche_stats["Average tank distance"] = f"{sum(miles_per_tank) / len(miles_per_tank):.1f} miles"
-    porsche_stats["Longest tank distance"] = f"{max(miles_per_tank):.1f} miles"
-    porsche_stats["Shortest tank distance"] = f"{min(miles_per_tank):.1f} miles"
-
-    return porsche_stats
+    return stats
 
 
 # ------------------ helper functions ----------------------------------------------------------------------------------
@@ -456,6 +579,7 @@ def get_database():
     except sqlite3.Error:
         conn.rollback()
     finally:
+        cur.close()
         conn.close()
 
     return

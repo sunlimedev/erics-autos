@@ -1,0 +1,26 @@
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const milesInput = document.getElementById('miles');
+        const gallonsInput = document.getElementById('gallons');
+        const efficiencyInput = document.getElementById('efficiency');
+
+        function calculateEfficiency()
+        {
+            const miles = parseFloat(milesInput.value);
+            const gallons = parseFloat(gallonsInput.value);
+
+            if (!isNaN(miles) && !isNaN(gallons) && gallons > 0) {
+                const mpg = miles / gallons;
+                efficiencyInput.value = mpg.toFixed(2);
+                efficiencyInput.readOnly = true;
+            }
+            else
+            {
+                efficiencyInput.value = '';
+            }
+        }
+
+        milesInput.addEventListener('input', calculateEfficiency);
+        gallonsInput.addEventListener('input', calculateEfficiency);
+    });
+</script>

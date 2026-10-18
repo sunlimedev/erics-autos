@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- metadata -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="sunlime">
+    <!-- css -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon/favicon.svg') }}">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ url_for('static', filename='favicon/favicon-96x96.png') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon/favicon.ico') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='favicon/apple-touch-icon.png') }}">
+    <!-- title -->
+    <title>{% block title %}My Garage{% endblock %}</title>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-dvh flex items-center justify-center">
+        <div class="w-md p-3">
+            {% block content %}
+
+            {% endblock %}
+        </div>
+    </div>
+    {% block script %}
+
+    {% endblock %}
+</body>
+</html>

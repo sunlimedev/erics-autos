@@ -1,0 +1,48 @@
+{% extends "_base.html" %}
+
+{% block title %}Log Hyundai Data{% endblock %}
+
+{% block content %}
+    <form method="POST" id="form" class="space-y-3">
+        <!-- csrf token -->
+        {{ form.hidden_tag() }}
+        <!-- text -->
+        <div class="flex justify-center text-3xl font-semibold text-black">
+            Log Hyundai Data
+        </div>
+        <!-- alert -->
+        {% include '_alert.html' %}
+        <!-- date field -->
+        <div>
+            {{ form.date.label(class_="block text-lg font-medium text-gray-700") }}
+            {{ form.date(class_="w-full p-3 border border-gray-300 rounded-lg transition") }}
+        </div>
+        <!-- odometer field -->
+        <div>
+            {{ form.odometer.label(class_="block text-lg font-medium text-gray-700") }}
+            {{ form.odometer(class_="w-full p-3 border border-gray-300 rounded-lg transition") }}
+        </div>
+        <!-- tank miles field -->
+        <div>
+            {{ form.miles.label(class_="block text-lg font-medium text-gray-700") }}
+            {{ form.miles(class_="w-full p-3 border border-gray-300 rounded-lg transition") }}
+        </div>
+        <!-- fuel efficiency field -->
+        <div>
+            {{ form.efficiency.label(class_="block text-lg font-medium text-gray-700") }}
+            {{ form.efficiency(class_="w-full p-3 border border-gray-300 rounded-lg transition") }}
+        </div>
+        <!-- charge level field -->
+        <div>
+            {{ form.level.label(class_="block text-lg font-medium text-gray-700") }}
+            {{ form.level(class_="w-full p-3 border border-gray-300 rounded-lg transition") }}
+        </div>
+        <!-- submit button -->
+        {{ form.submit(class_="w-full bg-blue-900 hover:bg-blue-950 text-lg text-white font-medium p-3 rounded-lg transition shadow-md hover:shadow-lg mt-3 cursor-pointer") }}
+    </form>
+{% endblock %}
+
+{% block script %}
+    <!-- submit spam prevention -->
+    {% include "_prevent_submit_spam.html" %}
+{% endblock %}

@@ -1,0 +1,26 @@
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const gallonsInput = document.getElementById('gallons');
+        const tankCostInput = document.getElementById('tank_cost');
+        const gallonCostInput = document.getElementById('gallon_cost');
+
+        function calculateGallonCost()
+        {
+            const gallons = parseFloat(gallonsInput.value);
+            const tankCost = parseFloat(tankCostInput.value);
+
+            if (!isNaN(gallons) && !isNaN(tankCost) && gallons > 0) {
+                const gallonCost = tankCost / gallons;
+                gallonCostInput.value = gallonCost.toFixed(3);
+                gallonCostInput.readOnly = true;
+            }
+            else
+            {
+                gallonCostInput.value = '';
+            }
+        }
+
+        gallonsInput.addEventListener('input', calculateGallonCost);
+        tankCostInput.addEventListener('input', calculateGallonCost);
+    });
+</script>

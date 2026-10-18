@@ -1,44 +1,33 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    {% include '_head.html' %}
-    <!-- page title -->
-    <title>Update Login</title>
-</head>
-<body class="bg-gray-50">
-    <!-- centered container -->
-    <div class="min-h-dvh flex items-center justify-center">
-        <!-- update login container -->
-        <div class="w-md p-3">
-            <!-- update login form -->
-            <form method="POST" class="space-y-3">
-                <!-- csrf token -->
-                {{ form.hidden_tag() }}
-                <!-- update text -->
-                <div class="flex justify-center text-2xl font-semibold text-black">
-                    Update Login
-                </div>
-                <!-- alert -->
-                {% include '_alert.html' %}
-                <!-- username field -->
-                <div>
-                    {{ form.username.label(class_="block text-lg font-medium text-gray-700") }}
-                    {{ form.username(class_="w-full p-3 border border-gray-300 rounded-lg transition", placeholder="Minimum 4 characters", minlength="4", maxlength="32") }}
-                </div>
-                <!-- password field -->
-                <div>
-                    {{ form.password.label(class_="block text-lg font-medium text-gray-700") }}
-                    {{ form.password(class_="w-full p-3 border border-gray-300 rounded-lg transition", placeholder="Minimum 8 characters", minlength="8", maxlength="32") }}
-                </div>
-                <!-- confirm password field -->
-                <div>
-                    {{ form.confirm.label(class_="block text-lg font-medium text-gray-700") }}
-                    {{ form.confirm(class_="w-full p-3 border border-gray-300 rounded-lg transition", placeholder="Must match above") }}
-                </div>
-                <!-- submit button -->
-                {{ form.submit(class_="w-full bg-blue-900 hover:bg-blue-950 text-lg text-white font-medium p-3 rounded-lg transition shadow-md hover:shadow-lg mt-3 cursor-pointer") }}
-            </form>
+{% extends "_base.html" %}
+
+{% block title %}Update Login{% endblock %}
+
+{% block content %}
+    <form method="POST" id="form" class="space-y-3">
+        <!-- csrf token -->
+        {{ form.hidden_tag() }}
+        <!-- text -->
+        <div class="flex justify-center text-3xl font-semibold text-black">
+            Update Login
         </div>
-    </div>
-</body>
-</html>
+        <!-- alert -->
+        {% include '_alert.html' %}
+        <!-- username field -->
+        <div>
+            {{ form.username.label(class_="block text-lg font-medium text-gray-700") }}
+            {{ form.username(class_="w-full p-3 border border-gray-300 rounded-lg transition", placeholder="Minimum 4 characters", minlength="4", maxlength="32") }}
+        </div>
+        <!-- password field -->
+        <div>
+            {{ form.password.label(class_="block text-lg font-medium text-gray-700") }}
+            {{ form.password(class_="w-full p-3 border border-gray-300 rounded-lg transition", placeholder="Minimum 8 characters", minlength="8", maxlength="32") }}
+        </div>
+        <!-- confirm password field -->
+        <div>
+            {{ form.confirm.label(class_="block text-lg font-medium text-gray-700") }}
+            {{ form.confirm(class_="w-full p-3 border border-gray-300 rounded-lg transition", placeholder="Must match above") }}
+        </div>
+        <!-- submit button -->
+        {{ form.submit(class_="w-full bg-blue-900 hover:bg-blue-950 text-lg text-white font-medium p-3 rounded-lg transition shadow-md hover:shadow-lg mt-3 cursor-pointer") }}
+    </form>
+{% endblock %}
